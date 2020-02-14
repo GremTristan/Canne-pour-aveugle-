@@ -1,0 +1,116 @@
+// Variables pour le capteur ultrason
+const int Echo_in_pin = 9;
+const int Trig_out_pin = 8;
+float Dist_mm = 0.0;
+
+
+//Definie les pin pour détéction de tombe
+const int Pushbutton = 5; //Pushbutton connected to pin D4
+const int LED = 7; //LED connected to pin D7
+int value = 0;
+
+
+// Vitesse du son (mm/us)
+const double Speed_sound = 340.0e-3;
+
+// Paramètres
+int LED_r = 6;
+
+void setup()
+{
+  // Initialisation capteur ultrason
+  pinMode(Trig_out_pin, OUTPUT);
+  pinMode(Echo_in_pin, INPUT);
+  digitalWrite(Trig_out_pin, LOW);
+
+  //Initialisation du moniteur serie 
+  Serial.begin(9600);
+
+  // Initialisation des led et du boutton pour simuler la canne qui tombe
+  pinMode(LED_r, OUTPUT);
+  digitalWrite(LED_r, LOW);
+  pinMode (LED, OUTPUT); //LED pin is Output
+  pinMode (Pushbutton, INPUT_PULLUP); //pushbutton pin is Output with internal Pull-up resistor
+
+
+}
+
+void loop()
+{
+
+  /* Mesure de la distance */
+  Dist_mm = GetDisCM( Echo_in_pin,  Trig_out_pin,  Speed_sound); // Valeur brute
+  //Dist_mm=GetMean(8,  Echo_in_pin,  Trig_out_pin,  Speed_sound); // Valeur moyenne
+
+  /* Affichage de la distance */
+  Serial.println(Dist_mm);
+
+  /* Activation des LEDs */
+  SetLED(Dist_mm, LED_r);
+}
+
+// Calcul de la distance en mm
+  float GetDisCM(int Echo_in_pinn, int Trig_out_pinn, double Speed_soundd)
+{
+  float Dist_milm = 0.0;
+  long HC_val = 0;
+
+  // Déclanchement mesure avec l'envoie d'une impulsion de 10µs
+  digitalWrite(Trig_out_pin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(Trig_out_pin, LOW);
+
+  // Lecture du temps aller/retour de l'onde
+  HC_val = pulseIn(Echo_in_pin, HIGH, 30000);
+
+  // Calcul de distance d(mm), V=d/t==> v*t
+  // Le coefficnet 2 pour la distance aller
+  Dist_milm = (HC_val / 2.0) * Speed_sound;
+
+  return Dist_milm;
+  
+}
+
+{
+  
+value = digitalRead(Pushbutton); //On lit si on appui ou si on appui pas sur le btn
+if (value == LOW) //Si on appuie sur le btn
+    {
+       if (value == LOW) //on fait une deuxieme verification pour savoir si il est toujours pressé
+    {
+        digitalWrite(L, HIGH); //On allume la led 
+        delay(10000); //attentre 10 sec (si la canne et tombé et reste pendant minimum 10 sec allummé la led (pour le moment la led simule sms))
+        digitalWrite(LED, LOW); //Eteindre la led lorsque l'on relache le btn
+    }
+    }
+}
+
+
+// Valeur Moyenne
+float GetMean(long Taille, int Echo_in_pinn, int Trig_out_pinn, double Speed_soundd)
+{
+  long i;
+  float Distance_tmp, Mean_val = 0.0, Somme = 0.0;
+  for (i = 0; i < Taille; i++)
+  {
+    Distance_tmp = GetDisCM( Echo_in_pinn,  Trig_out_pinn,  Speed_soundd);
+    Somme = Somme + Distance_tmp;
+  }
+  Mean_val = Somme / Taille;
+  return Mean_val;
+}
+//Permet en fonction de la distance capteur - objet de faire varier la vitesse de clignotement de led (cela simule le signal reçu sur le l'appliation ou elle renvera un son dans des écouteurs)
+
+void SetLED(float Dist_mmm, int LED_rr)
+{
+  if ((Dist_mmm < 500) && (Dist_mmm != 0.0))
+  {
+    digitalWrite(LED, HIGH);
+    delay(floor(Dist_mmm));
+    digitalWrite(LED, LOW);
+    delay(floor(Dist_mmm));
+  }
+
+
+
+}
